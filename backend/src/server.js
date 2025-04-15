@@ -8,7 +8,7 @@ import cookieParser from "cookie-parser";
 import cors from "cors";
 import { dbConnection } from "./config/database.js";
 import { ApiError } from "./utils/apiError.js";
-import { globalErrorHandlingMiddleWare } from "./middlewares/errorMiddleWare.js";
+import { globalErrorHandlingMiddleWare } from "./middlewares/errorMiddleware.js";
 import { app , server} from "./utils/socket.js";
 
 app.use(express.json({ limit: '50mb' })); // Increase the limit to 50MB or as needed
