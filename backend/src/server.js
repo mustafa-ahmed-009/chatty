@@ -15,7 +15,7 @@ app.use(express.json({ limit: '50mb' })); // Increase the limit to 50MB or as ne
 app.use(cookieParser());
 app.use(
   cors({
-    origin: "http://localhost:5173", // Allow multiple origins
+    origin: "https://chatty-umber-psi.vercel.app", // Allow multiple origins
     credentials: true, // Allow cookies and authentication headers
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH"], // Allowed methods
     allowedHeaders: ["Content-Type", "Authorization"], // Allowed headers
