@@ -7,7 +7,7 @@ import AuthHeader from "../components/auth/AuthHeader";
 import AuthInput from "../components/auth/AuthInput";
 import AuthImagePattern from "../components/auth/AuthImagePattern";
 import PasswordInput from "../components/auth/AuthPasswordInput";
-import Button from "../components/Button";
+import Button from "../components/button";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 
