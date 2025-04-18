@@ -6,6 +6,8 @@ import {
   logOut,
   signUp,
   updateProfile,
+  sendNewUserVerificationCode,
+  verifyNewUserRegistrationCode
 } from "../controllers/authController.js";
 import {
   signupValidator,
@@ -14,7 +16,8 @@ import {
 } from "../validators/authValidator.js";
 const router = express.Router();
 
-router.post("/signup", signupValidator, signUp);
+router.post("/signup", signupValidator, signUp, sendNewUserVerificationCode);
+router.post('/verifyRegistrationCode', verifyNewUserRegistrationCode);
 router.post("/login", loginValidator, login);
 router.post("/logout", logOut);
 router.put("/update-profile", authneticate, updateUserValidator, updateProfile);

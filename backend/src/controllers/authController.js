@@ -1,43 +1,122 @@
 import asyncHandler from "express-async-handler";
-import { User } from "../models/userModel.js";
+import { User as UserModel } from "../models/userModel.js";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
-import { generateToken } from "../utils/utils.js";
 import { ApiError } from "../utils/apiError.js";
 import cloudinary from "../config/cloudinary.js";
-export const signUp = asyncHandler(async (req, res) => {
-  const user = await User.create({
-    fullName: req.body.name,
-    email: req.body.email,
-    password: req.body.password,
-  });
+import { setAuthCookie } from "../utils/setAuthCookie.js";
+import CryptoJS from "crypto-js"
+import { sendEmail } from "../utils/sendEmail.js";
+
+export const signUp  = asyncHandler(async (req, res , next)=>{
+  const user = await UserModel.create({
+      name : req.body.name , 
+      email : req.body.email , 
+      password : req.body.password , 
+  })
+const token = jwt.sign(
+  {
+    id: user._id,
+  },
+  process.env.JWT_SECRET,
+  {
+    expiresIn: process.env.JWT_EXPIRES_IN,
+  }
+);
+  setAuthCookie(res, token );
   
-  const token = generateToken(user._id, res);
-  res.status(201).json({
-    _id: user._id,
-    fullName: user.fullName,
-    email: user.email,
-    profilePic: user.profilePic,
-    createdAt:user.createdAt, 
-  });
-});
+      req .user = user;
+      next() ; 
+})
 //
 export const login = asyncHandler(async (req, res, next) => {
-  const user = await User.findOne({
-    email: req.body.email,
-  });
+  const user = await UserModel.findOne({ email: req.body.email });
   if (!user || !(await bcrypt.compare(req.body.password, user.password))) {
-    return next(new ApiError("Invalid credentials"));
+    return next(new ApiError("incorrect email or password", 401));
   }
-  const token = generateToken(user._id, res);
+  const token = jwt.sign(
+    {
+      id: user._id,
+    },
+    process.env.JWT_SECRET,
+    {
+      expiresIn: process.env.JWT_EXPIRES_IN,
+    }
+  );
+  setAuthCookie(res, token);
+  const userWithoutPassword = { ...user._doc };
+  delete userWithoutPassword.password;
   res.status(200).json({
-    _id: user._id,
-    fullName: user.fullName,
-    email: user.email,
-    profilePic: user.profilePic,
-    createdAt:user.createdAt, 
+    status: "success",
+    data: {
+      user: userWithoutPassword,
+    },
   });
 });
+export const sendNewUserVerificationCode = asyncHandler(async (req , res)=>{
+  const resetCode = Math.floor(100000 + Math.random() * 900000).toString();
+  const hashedResetCode = CryptoJS.SHA256(resetCode).toString(CryptoJS.enc.Hex);
+  const user = req.user;
+  user.newUserVerificaitonCodeExpires = new Date(Date.now() + 10 * 60 * 1000);
+  user.newRegistrationCode = hashedResetCode ; 
+  user.newUserVerified = false ; 
+  await user.save();
+  const message = `Hey ${user.name}! 👋  
+
+  Welcome to Chatty! To get started, please verify your email using this code:  
+  
+  🔑 **Verification Code:** ${resetCode}  
+  
+  ⚠️ This code expires in 10 minutes, so don't wait too long!  
+  
+  If you didn’t sign up for Chatty, just ignore this message or let us know at support@chatty.com.  
+  
+  Happy chatting! 🎉  
+  
+  — The Chatty Team`;  
+  try {
+    await sendEmail({
+      email: user.email,
+      subject: "Your password reset code (valid for 10 min)",
+      message,
+    });
+    console.log(hashedResetCode);
+
+  } catch (err) {
+    user.newRegistrationCode = undefined;
+    user.newUserVerificaitonCodeExpires = undefined;
+    user.newUserVerified = undefined;
+
+    await user.save();
+ throw new ApiError(err ,500);
+
+ 
+  }
+  res.status(200).json({
+    status: "success",
+    message: "verification  code has been sent to the email ",
+  });
+})
+export const verifyNewUserRegistrationCode = asyncHandler(async (req, res, next) => {
+  const verificationCode = req.body.verificationCode
+  const hashedResetCode = CryptoJS.SHA256(verificationCode).toString(CryptoJS.enc.Hex);
+  
+  const user = await UserModel.findOne({
+    newRegistrationCode: hashedResetCode,
+    newUserVerificaitonCodeExpires: { $gt: Date.now() },
+  });
+  
+  if (!user) {
+  throw new ApiError("verifcation code is invalid or expired", 500);
+  }
+  user.newUserVerified = true;
+  user.newUserVerificaitonCodeExpires = undefined ; 
+  user.newRegistrationCode =undefined ; 
+  await user.save();
+  res.status(200).json({
+    status: "you have been sucessfully verified ",
+  });
+});  
 export const logOut = (req, res) => {
   try {
     res.cookie("jwt", "", { maxAge: 0 });
@@ -70,7 +149,7 @@ export const authneticate = asyncHandler(async (req, res, next) => {
   }
   
   const decoded = jwt.verify(token, process.env.JWT_SECRET);
-  const currentUser = await User.findById(decoded.userId).select("-password");
+  const currentUser = await UserModel.findById(decoded.userId).select("-password");
   if (!currentUser) {
     return next(
       new ApiError(
@@ -112,7 +191,7 @@ export const updateProfile = asyncHandler(async (req, res, next) => {
   }
 
   // Update the user with the constructed update object
-  const user = await User.findByIdAndUpdate(
+  const user = await UserModel.findByIdAndUpdate(
     userId,
     updateFields,
     { new: true } // Return the updated document

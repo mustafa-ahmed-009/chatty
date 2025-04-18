@@ -8,7 +8,7 @@ const userSchema = new mongoose.Schema(
             unique: true,
             required: true,
         },
-        fullName: {
+        name: {
             type: String, 
             required: true
         },
@@ -20,7 +20,10 @@ const userSchema = new mongoose.Schema(
         profilePic: {
             type: String, 
             default :""
-        }
+        } , 
+        newUserVerified: Boolean,
+        newUserVerificaitonCodeExpires : Date , 
+        newRegistrationCode: String,
     }, {
         timestamps:true ,
     }
