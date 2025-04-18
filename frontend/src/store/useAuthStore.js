@@ -13,7 +13,7 @@ export const useAuthStore = create((set, get) => ({
   isCheckingAuth: true,
   onlineUsers: [],
   socket: null,
-  
+  loading: false , 
   checkAuth: async () => {
     set({ isCheckingAuth: true });
     try {
@@ -81,7 +81,24 @@ export const useAuthStore = create((set, get) => ({
       set({ isUpdatingProfile: false });
     }
   },
-  
+  verifyEmailCode: async (data) => {
+    set({ isUpdatingProfile: true });
+    try {
+      set({
+        loading: true 
+      })
+      const response = await axiosInstance.put("/auth/verifyRegistrationCode", data);
+      set({ authUser: response.data });
+      set({
+        loading: false 
+      })
+      toast.success("Profile updated successfully");
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Profile update failed");
+    } finally {
+      set({ isUpdatingProfile: false });
+    }
+  },
   connectSocket: () => {
     const { authUser, socket } = get();
     

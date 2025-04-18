@@ -9,6 +9,7 @@ import SignUpPage from "./pages/SignUpPage";
 import { Toaster } from "react-hot-toast";
 import { useAuthStore as useAuthStore } from "./store/useAuthStore";
 import { useThemeStore } from "./store/useThemeStore";
+import CodeVerificationPage from "./pages/codeVerificationPage";
 
 const App = () => {
  const {theme} =  useThemeStore();
@@ -38,6 +39,10 @@ const App = () => {
   <Route
     path="/profile"
     element={authUser ? <ProfilePage /> : <Navigate to="/login" />}
+  />
+  <Route
+    path="/verificationPage"
+    element={!authUser ? <CodeVerificationPage /> : <Navigate to="/" />}
   />
 </Routes>
 <Toaster />
