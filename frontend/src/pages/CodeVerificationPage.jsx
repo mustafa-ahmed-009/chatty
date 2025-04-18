@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { FaLock, FaEnvelope, FaCheck } from 'react-icons/fa';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation} from 'react-router-dom';
 import toast from 'react-hot-toast';
 
 const CodeVerificationPage = () => {
